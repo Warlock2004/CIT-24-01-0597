@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  backend:
+    image: todo-backend:latest
+    container_name: todo-backend
+    restart: on-failure
+    environment:
+      - DB_PATH=/data/todos.db
+    volumes:
+      - todo-data:/data
+    networks:
+      - todo-net
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: todo-frontend:latest
+    container_name: todo-frontend
+    restart: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - todo-net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  todo-data:
+    name: todo-data
+
+networks:
+  todo-net:
+    name: todo-net
+    driver: bridge
